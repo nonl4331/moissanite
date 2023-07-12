@@ -1,0 +1,17 @@
+[package]
+name = "pathtracer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nalgebra = "0.32.2"
+minifb = "0.24.0"
+log = { version = "0.4.19", features = ["std"] }
+indicatif = "0.17.3"
+fern = { version = "0.6.2", features = ["colored"] }
+chrono = "0.4.26"
+rayon = "1.7.0"
+bvh = { git = "https://github.com/svenstaro/bvh" }
+tobj = "4.0.0"
+derive-new = "0.5.9"
+rand = "0.8.5"
