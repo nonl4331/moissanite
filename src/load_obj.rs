@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 #[allow(dead_code)]
-pub unsafe fn load_obj(path: &str, scale: f32, offset: Vec3) {
+pub unsafe fn load_obj(path: &str, scale: f32, offset: Vec3, mat_index: usize) {
     let (models, _) = tobj::load_obj(
         path,
         &tobj::LoadOptions {
@@ -51,6 +51,7 @@ pub unsafe fn load_obj(path: &str, scale: f32, offset: Vec3) {
 
         for j in 0..ilen / 3 {
             let i = j * 3;
+
             TRIANGLES.push(Triangle::new(
                 [
                     mesh.indices[i] as usize + vo,
@@ -62,8 +63,7 @@ pub unsafe fn load_obj(path: &str, scale: f32, offset: Vec3) {
                     mesh.normal_indices[i + 1] as usize + no,
                     mesh.normal_indices[i + 2] as usize + no,
                 ],
-                0,
-                0,
+                mat_index,
             ));
         }
 

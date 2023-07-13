@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use crate::{material::WAVELENGTH_RANGE, prelude::*};
+use rand::Rng;
 
 #[derive(Debug)]
 pub struct PiecewiseGaussian {
@@ -67,4 +68,12 @@ pub fn to_u32(rgb: Vec3) -> u32 {
     let b = ((b * 255.0) as u8) as u32;
 
     r << 16 | g << 8 | b
+}
+
+pub fn sample_wl(rng: &mut impl Rng) -> f32 {
+    rng.gen_range(380.0..750.0)
+}
+
+pub fn inverse_pdf_wl(_: f32) -> f32 {
+    WAVELENGTH_RANGE
 }

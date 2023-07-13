@@ -40,15 +40,15 @@ pub unsafe fn cornell_box(scale: f32) {
         ])),
     ]);
     TRIANGLES.extend([
-        Triangle::new([3 + vo, 1 + vo, 5 + vo], [no, no, no], 2 + mo, 0),
-        Triangle::new([5 + vo, 7 + vo, 3 + vo], [no, no, no], 2 + mo, 0),
-        Triangle::new([vo, 2 + vo, 6 + vo], [1 + no, 1 + no, 1 + no], 1 + mo, 0),
-        Triangle::new([6 + vo, 4 + vo, vo], [1 + no, 1 + no, 1 + no], 1 + mo, 0),
-        Triangle::new([1 + vo, vo, 4 + vo], [2 + no, 2 + no, 2 + no], mo, 0),
-        Triangle::new([4 + vo, 5 + vo, 1 + vo], [2 + no, 2 + no, 2 + no], mo, 0),
-        Triangle::new([5 + vo, 4 + vo, 6 + vo], [3 + no, 3 + no, 3 + no], mo, 0),
-        Triangle::new([6 + vo, 7 + vo, 5 + vo], [3 + no, 3 + no, 3 + no], mo, 0),
-        Triangle::new([1 + vo, vo, 2 + vo], [4 + no, 4 + no, 4 + no], mo, 0),
-        Triangle::new([2 + vo, 3 + vo, 1 + vo], [4 + no, 4 + no, 4 + no], mo, 0),
+        Triangle::new([3 + vo, 1 + vo, 5 + vo], [no, no, no], 2 + mo),
+        Triangle::new([5 + vo, 7 + vo, 3 + vo], [no, no, no], 2 + mo),
+        Triangle::new([vo, 2 + vo, 6 + vo], [1 + no, 1 + no, 1 + no], 1 + mo),
+        Triangle::new([6 + vo, 4 + vo, vo], [1 + no, 1 + no, 1 + no], 1 + mo),
+        Triangle::new([1 + vo, vo, 4 + vo], [2 + no, 2 + no, 2 + no], mo),
+        Triangle::new([4 + vo, 5 + vo, 1 + vo], [2 + no, 2 + no, 2 + no], mo),
+        Triangle::new([5 + vo, 4 + vo, 6 + vo], [3 + no, 3 + no, 3 + no], mo),
+        Triangle::new([6 + vo, 7 + vo, 5 + vo], [3 + no, 3 + no, 3 + no], mo),
+        Triangle::new([1 + vo, vo, 2 + vo], [4 + no, 4 + no, 4 + no], mo),
+        Triangle::new([2 + vo, 3 + vo, 1 + vo], [4 + no, 4 + no, 4 + no], mo),
     ]);
 }

@@ -9,15 +9,15 @@ mod material;
 mod render;
 mod triangle;
 
-use crate::{cornell_box::cornell_box, prelude::*, render::render};
+use crate::{cornell_box::cornell_box, prelude::*};
 use derive_new::new;
 use fern::colors::{Color, ColoredLevelConfig};
 use minifb::*;
 
 pub type Vec3 = nalgebra::Vector3<f32>;
-pub type Ray = bvh::ray::Ray<f32, 3>;
+pub type Ray = utility::Ray;
 pub type Vec2 = nalgebra::Vector2<f32>;
-pub type Bvh = bvh::bvh::Bvh<f32, 3>;
+pub type Bvh = bvh::Bvh;
 
 pub const WIDTH: usize = 1080;
 pub const HEIGHT: usize = 1080;
@@ -31,12 +31,8 @@ pub mod prelude {
     pub use super::{
         Bvh, Intersection, Ray, Vec2, Vec3, HEIGHT, MATERIALS, NORMALS, TRIANGLES, VERTICES, WIDTH,
     };
-    pub use crate::{
-        camera::Camera,
-        float_cmp,
-        material::{Mat, SpectralPowerDistribution, SpectralReflectanceDistribution},
-        triangle::Triangle,
-    };
+    pub use crate::{camera::Camera, material::*, triangle::Triangle};
+    pub use utility;
 }
 
 #[derive(Debug, new)]
@@ -54,7 +50,7 @@ fn main() {
 
     load_triangles();
 
-    let bvh = unsafe { Bvh::build(&mut TRIANGLES) };
+    let bvh = unsafe { Bvh::new(&mut TRIANGLES) };
 
     let camera = Camera::new(
         Vec3::new(0.0, -2.5, 0.0),
@@ -64,16 +60,14 @@ fn main() {
         1.0,
         1.0,
     );
-    let mut window = Window::new("minifbpt", WIDTH, HEIGHT, WindowOptions::default()).unwrap();
+    let mut window = Window::new("path tracer", WIDTH, HEIGHT, WindowOptions::default()).unwrap();
     window.limit_update_rate(Some(std::time::Duration::from_millis(16)));
 
-    render(&bvh, &camera, window, 1000);
+    render::render(&bvh, &camera, window, 1000);
 }
 
 fn load_triangles() {
     unsafe {
-        cornell_box(1.0);
-
         let no = NORMALS.len();
         let mo = MATERIALS.len();
         let vo = VERTICES.len();
@@ -85,9 +79,10 @@ fn load_triangles() {
         ]);
         NORMALS.extend([Vec3::new(0.0, 0.0, 1.0), Vec3::new(1.0, 0.0, 0.0)]);
         MATERIALS.extend([Mat::SpectralPowerDistribution(
-            SpectralPowerDistribution::d65_illuminant(3e-4),
+            SpectralPowerDistribution::d65_illuminant(1e-3),
         )]);
-        TRIANGLES.extend([Triangle::new([vo, 1 + vo, 2 + vo], [no, no, no], mo, 0)]);
+        TRIANGLES.extend([Triangle::new([vo, 1 + vo, 2 + vo], [no, no, no], mo)]);
+        cornell_box(1.0);
     }
 }
 
@@ -113,17 +108,4 @@ pub fn create_logger() {
         .chain(std::io::stderr())
         .apply()
         .unwrap();
-}
-
-use std::cmp::Ordering;
-
-#[allow(clippy::float_cmp)]
-pub fn float_cmp(a: f32, b: f32) -> Ordering {
-    if a < b {
-        Ordering::Less
-    } else if a == b {
-        Ordering::Equal
-    } else {
-        Ordering::Greater
-    }
 }

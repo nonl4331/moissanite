@@ -1,19 +1,16 @@
 use crate::prelude::*;
-use bvh::bounding_hierarchy::BHShape;
+use bvh::aabb::{Aabb, Aabound};
 use derive_new::new;
 
-#[derive(Debug, new)]
+#[derive(Debug, new, PartialEq)]
 pub struct Triangle {
     pos: [usize; 3],
     nor: [usize; 3],
-    mat: usize,
-    node_index: usize,
+    pub mat: usize,
 }
 
-use bvh::aabb::{Aabb, Bounded};
-
-impl Bounded<f32, 3> for Triangle {
-    fn aabb(&self) -> Aabb<f32, 3> {
+impl Aabound for Triangle {
+    fn aabb(&self) -> Aabb {
         let a = unsafe { VERTICES[self.pos[0]] };
         let b = unsafe { VERTICES[self.pos[1]] };
         let c = unsafe { VERTICES[self.pos[2]] };
@@ -31,28 +28,21 @@ impl Bounded<f32, 3> for Triangle {
         let diff = max - min;
         if diff.x == 0.0 {
             max.x += 1e-5;
+            min.x -= 1e-5;
         }
         if diff.y == 0.0 {
             max.y += 1e-5;
+            min.y -= 1e-5;
         }
         if diff.z == 0.0 {
             max.z += 1e-5;
+            min.z -= 1e-5;
         }
 
         max += 1e-5 * diff;
         min -= 1e-5 * diff;
 
-        Aabb::with_bounds(min.into(), max.into())
-    }
-}
-
-impl BHShape<f32, 3> for Triangle {
-    fn set_bh_node_index(&mut self, index: usize) {
-        self.node_index = index;
-    }
-
-    fn bh_node_index(&self) -> usize {
-        self.node_index
+        Aabb::new(min, max)
     }
 }
 
@@ -73,11 +63,7 @@ impl Triangle {
         let mut p1t: Vec3 = v1 - ro;
         let mut p2t: Vec3 = v2 - ro;
 
-        let (x, y, z) = (
-            ray.direction.x.abs(),
-            ray.direction.y.abs(),
-            ray.direction.z.abs(),
-        );
+        let (x, y, z) = (ray.dir.x.abs(), ray.dir.y.abs(), ray.dir.z.abs());
 
         let max_axis = if x > y && x > z {
             0
@@ -87,7 +73,7 @@ impl Triangle {
             2
         };
 
-        let mut swaped_raydir = ray.direction;
+        let mut swaped_raydir = ray.dir;
 
         if max_axis == 0 {
             p0t = p0t.zyx();
@@ -147,15 +133,16 @@ impl Triangle {
 
         let t = inv_det * t_scaled;
 
-        //let uv = b0 * Vec2::new(0.0, 0.0) + b1 * Vec2::new(1.0, 0.0) + b2 * Vec2::new(1.0, 1.0);
-
         let n0 = unsafe { NORMALS[self.nor[0]] };
         let n1 = unsafe { NORMALS[self.nor[1]] };
         let n2 = unsafe { NORMALS[self.nor[2]] };
 
-        let normal = b0 * n0 + b1 * n1 + b2 * n2;
+        let mut normal = b0 * n0 + b1 * n1 + b2 * n2;
 
-        let out = normal.dot(&ray.direction) < 0.0;
+        let out = normal.dot(&ray.dir) < 0.0;
+        if !out {
+            normal = -normal;
+        }
 
         let x_abs_sum = (b0 * v0.x).abs() + (b1 * v1.x).abs() + (b2 * v2.x).abs();
         let y_abs_sum = (b0 * v0.y).abs() + (b1 * v1.y).abs() + (b2 * v2.y).abs();

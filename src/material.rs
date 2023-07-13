@@ -13,6 +13,7 @@ const INVERSE_INCREMENT: f32 = (BINS - 1) as f32 / WAVELENGTH_RANGE;
 pub enum Mat {
     SpectralPowerDistribution(SpectralPowerDistribution),
     SpectralReflectanceDistribution(SpectralReflectanceDistribution),
+    SpectralRefract(SpectralRefract),
     Lambertian(Lambertian),
 }
 
@@ -20,7 +21,7 @@ impl Mat {
     pub fn spectral_radiance(&self, int: &Intersection, wo: Vec3, wavelength: f32) -> f32 {
         match self {
             Mat::SpectralPowerDistribution(dist) => dist.spectral_radiance(int, wo, wavelength),
-            Mat::Lambertian(_) | Mat::SpectralReflectanceDistribution(_) => 0.0,
+            _ => 0.0,
         }
     }
 
@@ -28,7 +29,7 @@ impl Mat {
         &self,
         int: &Intersection,
         ray: &mut Ray,
-        _wavelength: f32,
+        wavelength: f32,
         rng: &mut impl Rng,
     ) -> bool {
         match self {
@@ -36,6 +37,7 @@ impl Mat {
             Mat::Lambertian(_) | Mat::SpectralReflectanceDistribution(_) => {
                 Lambertian::scatter(int, ray, rng)
             }
+            Mat::SpectralRefract(mat) => mat.scatter(int, ray, wavelength, rng),
         }
     }
 
@@ -44,11 +46,18 @@ impl Mat {
             Mat::SpectralPowerDistribution(_) => unreachable!(),
             Mat::Lambertian(l) => l.albedo,
             Mat::SpectralReflectanceDistribution(l) => l.albedo(wavelength),
+            Mat::SpectralRefract(_) => unreachable!(),
         }
     }
 
+    pub fn eval_li(&self, _int: &Intersection, _wo: Vec3, _wi: Vec3, _: f32) -> f32 {
+        match self {
+            Mat::SpectralRefract(_) => 1.0,
+            _ => unreachable!(),
+        }
+    }
     pub fn delta_dist(&self) -> bool {
-        false
+        matches!(self, Mat::SpectralRefract(_))
     }
 }
 
@@ -92,14 +101,15 @@ pub struct Lambertian {
 
 impl Lambertian {
     pub fn scatter(int: &Intersection, ray: &mut Ray, rng: &mut impl Rng) -> bool {
-        ray.direction = (random_in_unit_sphere(rng) + int.nor).normalize();
-        ray.origin = (int.pos
-            + Vec3::new(
-                int.nor.x * int.err.x,
-                int.nor.y * int.err.y,
-                int.nor.z * int.err.z,
-            ))
-        .into();
+        *ray = Ray::new(
+            int.pos
+                + Vec3::new(
+                    int.nor.x * int.err.x,
+                    int.nor.y * int.err.y,
+                    int.nor.z * int.err.z,
+                ),
+            (random_in_unit_sphere(rng) + int.nor).normalize(),
+        );
         false
     }
 }
@@ -142,4 +152,62 @@ impl SpectralReflectanceDistribution {
         let index = ((wavelength - MIN_WAVELENGTH) * INVERSE_INCREMENT) as usize;
         self.reflectance[index] // todo lerp
     }
+}
+
+#[derive(Debug)]
+pub struct SpectralRefract {
+    ior: [f32; BINS],
+}
+
+impl SpectralRefract {
+    pub fn new(ior: [f32; BINS]) -> Self {
+        for ior_wl in &ior {
+            debug_assert!(*ior_wl > 0.0);
+        }
+        Self { ior }
+    }
+
+    pub fn scatter(
+        &self,
+        int: &Intersection,
+        ray: &mut Ray,
+        wavelength: f32,
+        rng: &mut impl Rng,
+    ) -> bool {
+        let index = ((wavelength - MIN_WAVELENGTH) * INVERSE_INCREMENT) as usize;
+        let eta = self.ior[index];
+        let mut eta_fraction = 1.0 / eta;
+        if !int.out {
+            eta_fraction = eta;
+        }
+
+        let nwo = -ray.dir;
+
+        let cos_theta = (nwo.dot(&int.nor)).min(1.0);
+
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+        let cannot_refract = eta_fraction * sin_theta > 1.0;
+        let f0 = (1.0 - eta_fraction) / (1.0 + eta_fraction);
+        let f0 = f0 * f0;
+
+        let (origin, dir);
+
+        if cannot_refract || fresnel(cos_theta, f0) > rng.gen() {
+            // reflect
+            dir = utility::reflect_across_normal(nwo, int.nor);
+            origin = utility::offset_ray(int.pos, int.nor, int.err, true);
+        } else {
+            // refract
+            let perp = eta_fraction * (ray.dir + cos_theta * int.nor);
+            let para = -1.0 * (1.0 - perp.magnitude()).abs().sqrt() * int.nor;
+            dir = perp + para;
+            origin = utility::offset_ray(int.pos, int.nor, int.err, false);
+        }
+        *ray = Ray::new(origin, dir);
+        false
+    }
+}
+
+pub fn fresnel(cos: f32, f0: f32) -> f32 {
+    f0 + (1.0f32 - f0) * (1.0 - cos).powf(5.0)
 }

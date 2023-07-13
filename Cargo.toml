@@ -11,7 +11,9 @@ indicatif = "0.17.3"
 fern = { version = "0.6.2", features = ["colored"] }
 chrono = "0.4.26"
 rayon = "1.7.0"
-bvh = { git = "https://github.com/svenstaro/bvh" }
 tobj = "4.0.0"
 derive-new = "0.5.9"
 rand = "0.8.5"
+image = "0.24.6"
+utility = { path = "crates/utility" }
+bvh = { path = "crates/bvh" }

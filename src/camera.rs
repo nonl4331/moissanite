@@ -1,10 +1,10 @@
 use crate::prelude::*;
 
 pub struct Camera {
-    lower_left: Vec3,
-    up: Vec3,
-    right: Vec3,
-    origin: Vec3,
+    pub lower_left: Vec3,
+    pub up: Vec3,
+    pub right: Vec3,
+    pub origin: Vec3,
 }
 
 impl Camera {
@@ -37,7 +37,7 @@ impl Camera {
 
     pub fn get_ray(&self, u: f32, v: f32) -> Ray {
         Ray::new(
-            self.origin.into(),
+            self.origin,
             self.lower_left + self.right * u + self.up * (1.0 - v) - self.origin,
         )
     }

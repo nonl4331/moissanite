@@ -1,2 +1,4 @@
-/target
+**/target/
 /res
+**/*.png
+**/*.exr
